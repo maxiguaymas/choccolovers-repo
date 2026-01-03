@@ -231,8 +231,8 @@ const BenefitsStrip = () => {
 
 const ProductCard = ({ product, onExpand }) => {
   const handleConsult = () => {
-    const message = `Hola ChoccoLovers, estoy encantado con el producto: ${product.name}. ¿Me podrían dar más información?`;
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    const message = `Hola ChoccoLovers! Estoy interesado en el producto: ${product.name}. ¿Me podrían dar más información o tomar mi pedido?`;
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=543875012118&text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
 
@@ -265,7 +265,7 @@ const ProductCard = ({ product, onExpand }) => {
           <div className="absolute inset-0 bg-gradient-to-t from-[#3E2723]/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
           
           {/* Quick Action Button - Centered */}
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 delay-100">
+          <div className="absolute inset-0 hidden md:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 delay-100">
              <button 
                onClick={(e) => { e.stopPropagation(); handleConsult(); }}
                className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500 bg-white/10 backdrop-blur-md border border-white/50 text-white font-bold py-3 px-8 rounded-none hover:bg-[#D4AF37] hover:border-[#D4AF37] hover:text-[#3E2723] uppercase text-xs tracking-widest flex items-center gap-3"
@@ -296,6 +296,15 @@ const ProductCard = ({ product, onExpand }) => {
           
           <div className="flex items-center justify-between pt-4 border-t border-gray-100/50">
             <span className="text-xl font-serif font-black text-[#3E2723]">${product.price.toLocaleString()}</span>
+            
+            {/* Botón visible solo en móvil para mejorar UX responsive */}
+            <button 
+              onClick={(e) => { e.stopPropagation(); handleConsult(); }}
+              className="md:hidden flex items-center gap-2 bg-[#3E2723] text-white px-4 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-[#D4AF37] hover:text-[#3E2723] transition-colors shadow-lg active:scale-95"
+            >
+              <MessageCircle size={16} />
+              Consultar
+            </button>
           </div>
         </div>
       </div>
