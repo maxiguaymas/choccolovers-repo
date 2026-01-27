@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Trash2, Plus, Save, LogOut, LayoutDashboard, Package, Edit, Upload, AlertTriangle, Database, X } from 'lucide-react';
-import { db, auth } from './config/firebaseConfig';
-import { cloudinaryConfig } from './config/cloudinaryConfig';
+import { db, auth } from '../config/firebaseConfig';
+import { cloudinaryConfig } from '../config/cloudinaryConfig';
 import { collection, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
 
