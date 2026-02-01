@@ -11,6 +11,13 @@ const Catalog = ({ products, categories, loading }) => {
     ? products 
     : products.filter(p => p.category === activeCategory);
 
+  // Senior Logic: Sort featured products to the top
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    if (a.isFeatured && !b.isFeatured) return -1;
+    if (!a.isFeatured && b.isFeatured) return 1;
+    return 0;
+  });
+
   return (
     <section id="catalogo" className="py-28 bg-[#FFFAF0] relative overflow-hidden">
       {/* Elemento decorativo de fondo */}
@@ -19,7 +26,7 @@ const Catalog = ({ products, categories, loading }) => {
       <ImageModal 
         isOpen={!!selectedImage} 
         onClose={() => setSelectedImage(null)} 
-        imageUrl={selectedImage?.image} 
+        images={selectedImage ? (selectedImage.images?.length > 0 ? selectedImage.images : [selectedImage.image]) : []} 
         altText={selectedImage?.name} 
       />
 
@@ -58,7 +65,7 @@ const Catalog = ({ products, categories, loading }) => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
-            {filteredProducts.map(product => (
+            {sortedProducts.map(product => (
               <ProductCard key={product.id} product={product} onExpand={() => setSelectedImage(product)} />
             ))}
           </div>

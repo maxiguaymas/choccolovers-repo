@@ -1,5 +1,5 @@
 import React from 'react';
-import { MessageCircle, Star, Maximize2 } from 'lucide-react';
+import { MessageCircle, Star, Maximize2, Sparkles, Layers, Ban } from 'lucide-react';
 
 const ProductCard = ({ product, onExpand }) => {
   const handleConsult = () => {
@@ -7,6 +7,13 @@ const ProductCard = ({ product, onExpand }) => {
     const whatsappUrl = `https://api.whatsapp.com/send?phone=543875012118&text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
+
+  // Senior Tip: Handle both single image (legacy) and multiple images
+  const mainImage = product.images && product.images.length > 0 
+    ? product.images[0] 
+    : product.image;
+
+  const isInStock = product.inStock !== false;
 
   return (
     <div className="group relative bg-white transition-all duration-500 hover:-translate-y-2">
@@ -21,15 +28,38 @@ const ProductCard = ({ product, onExpand }) => {
             </div>
           )}
           
+          {/* Featured Badge */}
+          {product.isFeatured && (
+            <div className="absolute top-4 right-4 z-20 bg-[#D4AF37] text-[#3E2723] text-[10px] font-black uppercase px-3 py-1 tracking-widest flex items-center gap-1 shadow-lg">
+              <Sparkles size={10} /> Destacado
+            </div>
+          )}
+
+          {/* Out of Stock Badge */}
+          {!isInStock && (
+            <div className="absolute inset-0 z-30 bg-black/20 flex items-center justify-center">
+              <div className="bg-red-600 text-white text-[10px] font-black uppercase px-4 py-2 tracking-[0.2em] shadow-xl flex items-center gap-2">
+                <Ban size={14} /> Sin Stock
+              </div>
+            </div>
+          )}
+
+          {/* Multi-image indicator */}
+          {product.images && product.images.length > 1 && (
+            <div className="absolute bottom-4 left-4 z-20 bg-black/40 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1">
+              <Layers size={12} /> {product.images.length} fotos
+            </div>
+          )}
+
           {/* Zoom Icon Indicator */}
-          <div className="absolute top-4 right-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <div className={`absolute ${product.isFeatured ? 'top-12' : 'top-4'} right-4 z-20 opacity-0 group-hover:opacity-100 transition-opacity duration-300`}>
             <div className="bg-black/20 backdrop-blur-sm p-2 rounded-full text-white">
                <Maximize2 size={18} />
             </div>
           </div>
 
           <img 
-            src={product.image} 
+            src={mainImage} 
             alt={product.name} 
             className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-1000 ease-out"
           />
@@ -37,7 +67,7 @@ const ProductCard = ({ product, onExpand }) => {
           <div className="absolute inset-0 bg-gradient-to-t from-[#3E2723]/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
           
           {/* Quick Action Button - Centered */}
-          <div className="absolute inset-0 hidden md:flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 delay-100">
+          <div className={`absolute inset-0 hidden md:flex items-center justify-center opacity-0 ${isInStock ? 'group-hover:opacity-100' : ''} transition-all duration-500 delay-100`}>
              <button 
                onClick={(e) => { e.stopPropagation(); handleConsult(); }}
                className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500 bg-white/10 backdrop-blur-md border border-white/50 text-white font-bold py-3 px-8 rounded-none hover:bg-[#D4AF37] hover:border-[#D4AF37] hover:text-[#3E2723] uppercase text-xs tracking-widest flex items-center gap-3"
@@ -70,13 +100,15 @@ const ProductCard = ({ product, onExpand }) => {
             <span className="text-xl font-serif font-black text-[#3E2723]">${product.price.toLocaleString()}</span>
             
             {/* Botón visible solo en móvil para mejorar UX responsive */}
-            <button 
-              onClick={(e) => { e.stopPropagation(); handleConsult(); }}
-              className="md:hidden flex items-center gap-2 bg-[#3E2723] text-white px-4 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-[#D4AF37] hover:text-[#3E2723] transition-colors shadow-lg active:scale-95"
-            >
-              <MessageCircle size={16} />
-              Consultar
-            </button>
+            {isInStock && (
+              <button 
+                onClick={(e) => { e.stopPropagation(); handleConsult(); }}
+                className="md:hidden flex items-center gap-2 bg-[#3E2723] text-white px-4 py-2.5 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-[#D4AF37] hover:text-[#3E2723] transition-colors shadow-lg active:scale-95"
+              >
+                <MessageCircle size={16} />
+                Consultar
+              </button>
+            )}
           </div>
         </div>
       </div>

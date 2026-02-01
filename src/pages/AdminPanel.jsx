@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, Plus, Save, LogOut, LayoutDashboard, Package, Edit, Upload, AlertTriangle, Database, X } from 'lucide-react';
+import { Trash2, Plus, Save, LogOut, LayoutDashboard, Package, Edit, Upload, AlertTriangle, Database, X, Star, PackageX } from 'lucide-react';
 import { db, auth } from '../config/firebaseConfig';
 import { cloudinaryConfig } from '../config/cloudinaryConfig';
 import { collection, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
@@ -78,11 +78,11 @@ export default function AdminPanel({ products, categories }) {
   const [password, setPassword] = useState('');
   
   // Form States
-  const [productForm, setProductForm] = useState({ id: null, name: '', price: '', category: categories[1]?.name || '', image: '', description: '' });
+  const [productForm, setProductForm] = useState({ id: null, name: '', price: '', category: categories[1]?.name || '', images: [], description: '', isFeatured: false, inStock: true });
   const [newCategory, setNewCategory] = useState('');
   const [isEditing, setIsEditing] = useState(false);
-  const [imageFile, setImageFile] = useState(null);
-  const [previewImage, setPreviewImage] = useState('');
+  const [imageFiles, setImageFiles] = useState([]); // Array de archivos File
+  const [previewImages, setPreviewImages] = useState([]); // Array de URLs locales
   const [isSaving, setIsSaving] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
 
@@ -113,18 +113,44 @@ export default function AdminPanel({ products, categories }) {
   };
 
   const resetForm = () => {
-    setProductForm({ id: null, name: '', price: '', category: '', image: '', description: '' });
-    setPreviewImage('');
-    setImageFile(null);
+    setProductForm({ id: null, name: '', price: '', category: '', images: [], description: '', isFeatured: false, inStock: true });
+    setPreviewImages([]);
+    setImageFiles([]);
     setIsEditing(false);
   };
 
   const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setImageFile(file);
-      const url = URL.createObjectURL(file);
-      setPreviewImage(url);
+    const files = Array.from(e.target.files);
+    if (files.length > 0) {
+      setImageFiles(prev => [...prev, ...files]);
+      const newPreviews = files.map(file => URL.createObjectURL(file));
+      setPreviewImages(prev => [...prev, ...newPreviews]);
+    }
+  };
+
+  const removeImage = (index, isExisting = false) => {
+    if (isExisting) {
+      const newImages = [...productForm.images];
+      newImages.splice(index, 1);
+      setProductForm({ ...productForm, images: newImages });
+    } else {
+      const newFiles = [...imageFiles];
+      const newPreviews = [...previewImages];
+      newFiles.splice(index, 1);
+      newPreviews.splice(index, 1);
+      setImageFiles(newFiles);
+      setPreviewImages(newPreviews);
+    }
+  };
+
+  const uploadImages = async () => {
+    try {
+      const uploadPromises = imageFiles.map(file => uploadImageToCloudinary(file));
+      const urls = await Promise.all(uploadPromises);
+      return urls.filter(url => url !== null);
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      return null;
     }
   };
 
@@ -141,7 +167,6 @@ export default function AdminPanel({ products, categories }) {
       const data = await response.json();
       return data.secure_url;
     } catch (error) {
-      console.error("Error uploading image:", error);
       return null;
     }
   };
@@ -155,6 +180,18 @@ export default function AdminPanel({ products, categories }) {
     
     if (Number(productForm.price) < 0) {
       alert("El precio no puede ser negativo");
+      return;
+    }
+
+    // Validar límite de destacados
+    const featuredCount = products.filter(p => p.isFeatured && p.id !== productForm.id).length;
+    if (productForm.isFeatured && featuredCount >= 3) {
+      setModalConfig({
+        isOpen: true,
+        title: 'Límite de Destacados',
+        message: 'Solo puedes tener hasta 3 productos destacados simultáneamente para mantener la exclusividad.',
+        type: 'error'
+      });
       return;
     }
 
@@ -172,17 +209,10 @@ export default function AdminPanel({ products, categories }) {
   const executeSave = async () => {
     setIsSaving(true);
     try {
-      let imageUrl = productForm.image;
-
-      if (imageFile) {
-        const uploadedUrl = await uploadImageToCloudinary(imageFile);
-        if (!uploadedUrl) {
-          alert("Error al subir la imagen.");
-          setIsSaving(false);
-          return;
-        }
-        imageUrl = uploadedUrl;
-      }
+      const newUploadedUrls = await uploadImages();
+      // Combinamos imágenes existentes (si estamos editando) con las nuevas subidas
+      const finalImages = [...(productForm.images || []), ...newUploadedUrls];
+      const mainImage = finalImages[0] || ''; // Mantenemos compatibilidad con campo 'image'
 
       if (isEditing) {
         // Actualizar en Firebase
@@ -191,8 +221,11 @@ export default function AdminPanel({ products, categories }) {
           name: productForm.name,
           price: Number(productForm.price),
           category: productForm.category,
-          image: imageUrl,
-          description: productForm.description
+          image: mainImage,
+          images: finalImages || [],
+          description: productForm.description,
+          isFeatured: !!productForm.isFeatured,
+          inStock: productForm.inStock !== undefined ? productForm.inStock : true
         });
       } else {
         // Crear en Firebase
@@ -200,9 +233,12 @@ export default function AdminPanel({ products, categories }) {
           name: productForm.name,
           price: Number(productForm.price),
           category: productForm.category,
-          image: imageUrl,
+          image: mainImage,
+          images: finalImages,
           description: productForm.description,
-          rating: 5
+          rating: 5,
+          isFeatured: !!productForm.isFeatured,
+          inStock: productForm.inStock !== undefined ? productForm.inStock : true
         });
       }
       invalidateCache();
@@ -234,9 +270,16 @@ export default function AdminPanel({ products, categories }) {
   };
 
   const initiateEdit = (product) => {
-    setProductForm(product);
-    setPreviewImage(product.image);
-    setImageFile(null);
+    // Senior Tip: Siempre mergear con valores por defecto para evitar 'undefined' en campos nuevos
+    setProductForm({
+      ...product,
+      images: product.images || [],
+      isFeatured: !!product.isFeatured,
+      inStock: product.inStock !== undefined ? product.inStock : true,
+      description: product.description || ''
+    });
+    setPreviewImages([]);
+    setImageFiles([]);
     setIsEditing(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -301,7 +344,7 @@ export default function AdminPanel({ products, categories }) {
       for (const prod of PRODUCTS) {
         // Eliminamos el ID numérico para que Firebase genere uno nuevo
         const { id, ...data } = prod;
-        await addDoc(collection(db, "products"), data);
+        await addDoc(collection(db, "products"), { ...data, inStock: true });
       }
       invalidateCache();
       alert("¡Importación completada! Recarga la página para ver los cambios.");
@@ -380,19 +423,57 @@ export default function AdminPanel({ products, categories }) {
                   </div>
 
                   {/* Image Upload */}
-                  <div className="relative">
-                    <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" id="image-upload" />
-                    <label htmlFor="image-upload" className="w-full p-3 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 hover:border-[#D4AF37] cursor-pointer flex flex-col items-center justify-center transition-colors">
-                      {previewImage ? (
-                        <img src={previewImage} alt="Preview" className="h-32 w-full object-cover rounded-md" />
-                      ) : (
-                        <div className="py-4 flex flex-col items-center text-gray-400">
-                          <Upload size={24} className="mb-2" />
-                          <span className="text-xs uppercase font-bold">Subir Imagen</span>
+                  <div className="space-y-3">
+                    <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider">Imágenes del Producto</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {/* Imágenes existentes en la DB */}
+                      {productForm.images?.map((img, idx) => (
+                        <div key={`existing-${idx}`} className="relative group aspect-square">
+                          <img src={img} alt="Product" className="w-full h-full object-cover rounded-lg border border-gray-200" />
+                          <button type="button" onClick={() => removeImage(idx, true)} className="absolute -top-1 -right-1 bg-red-500 text-white p-1 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                            <X size={12} />
+                          </button>
                         </div>
-                      )}
+                      ))}
+                      {/* Previews de nuevas imágenes */}
+                      {previewImages.map((url, idx) => (
+                        <div key={`new-${idx}`} className="relative group aspect-square">
+                          <img src={url} alt="Preview" className="w-full h-full object-cover rounded-lg border-2 border-[#D4AF37]/30" />
+                          <button type="button" onClick={() => removeImage(idx, false)} className="absolute -top-1 -right-1 bg-red-500 text-white p-1 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                            <X size={12} />
+                          </button>
+                        </div>
+                      ))}
+                      {/* Botón para añadir más */}
+                      <label className="aspect-square flex flex-col items-center justify-center border-2 border-dashed border-gray-200 rounded-lg hover:border-[#D4AF37] hover:bg-[#FFFAF0] cursor-pointer transition-all">
+                        <Plus size={20} className="text-gray-400" />
+                        <input type="file" multiple accept="image/*" onChange={handleImageUpload} className="hidden" />
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Featured Toggle */}
+                  <div className="flex items-center justify-between p-3 bg-[#FFFAF0] rounded-lg border border-[#D4AF37]/20">
+                    <div className="flex items-center gap-2">
+                      <Star size={18} className={productForm.isFeatured ? "text-[#D4AF37] fill-[#D4AF37]" : "text-gray-300"} />
+                      <span className="text-sm font-bold text-[#3E2723]">Producto Destacado</span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" checked={productForm.isFeatured} onChange={e => setProductForm({...productForm, isFeatured: e.target.checked})} className="sr-only peer" />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#D4AF37]"></div>
                     </label>
-                    {previewImage && <button type="button" onClick={() => {setPreviewImage(''); setProductForm({...productForm, image: ''}); setImageFile(null);}} className="absolute top-2 right-2 bg-white p-1 rounded-full shadow-md text-red-500"><X size={14}/></button>}
+                  </div>
+
+                  {/* Stock Toggle */}
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="flex items-center gap-2">
+                      <PackageX size={18} className={productForm.inStock ? "text-gray-300" : "text-red-500"} />
+                      <span className="text-sm font-bold text-[#3E2723]">Stock Disponible</span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input type="checkbox" checked={productForm.inStock} onChange={e => setProductForm({...productForm, inStock: e.target.checked})} className="sr-only peer" />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
+                    </label>
                   </div>
 
                   <textarea required placeholder="Descripción" value={productForm.description} onChange={e => setProductForm({...productForm, description: e.target.value})} className="w-full p-3 bg-gray-50 rounded-lg border-none focus:ring-2 focus:ring-[#D4AF37]/20 h-24"></textarea>
@@ -443,11 +524,12 @@ export default function AdminPanel({ products, categories }) {
                 
                 <div className="space-y-4">
                   {products.map(product => (
-                    <div key={product.id} className={`flex items-center gap-4 p-4 border rounded-lg hover:shadow-md transition-all bg-white ${isEditing && productForm.id === product.id ? 'border-[#D4AF37] ring-1 ring-[#D4AF37]' : 'border-gray-100'}`}>
-                      <img src={product.image} alt={product.name} className="w-16 h-16 object-cover rounded-md bg-gray-100" />
+                    <div key={product.id} className={`flex items-center gap-4 p-4 border rounded-lg hover:shadow-md transition-all bg-white ${isEditing && productForm.id === product.id ? 'border-[#D4AF37] ring-1 ring-[#D4AF37]' : 'border-gray-100'} ${product.inStock === false ? 'opacity-75' : ''}`}>
+                      <img src={product.image} alt={product.name} className={`w-16 h-16 object-cover rounded-md bg-gray-100 ${product.inStock === false ? 'grayscale' : ''}`} />
                       <div className="flex-1">
                         <h4 className="font-bold text-[#3E2723]">{product.name}</h4>
                         <div className="flex items-center gap-3 text-sm text-gray-500">
+                          {product.inStock === false && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded font-bold uppercase">Sin Stock</span>}
                           <span className="text-[#D4AF37] font-bold">${product.price.toLocaleString()}</span>
                           <span>•</span>
                           <span className="bg-gray-100 px-2 py-0.5 rounded text-xs">{product.category}</span>

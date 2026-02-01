@@ -18,7 +18,7 @@ const Footer = () => {
                 </span>
              </div>
             <p className="text-gray-400 text-base leading-loose font-light pr-10 mb-8">
-              Redefiniendo el arte del chocolate desde 2024. Nuestra misión es simple: crear el mejor chocolate del mundo, sin atajos, solo pasión y los mejores ingredientes de la tierra.
+              Redefiniendo el arte del chocolate desde 2025. Nuestra misión es simple: crear el mejor chocolate del mundo, sin atajos, solo pasión y los mejores ingredientes de la tierra.
             </p>
           </div>
 
