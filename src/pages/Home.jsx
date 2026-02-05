@@ -3,6 +3,7 @@ import Navbar from '../components/layout/Navbar';
 import Hero from '../components/sections/Hero';
 import BenefitsStrip from '../components/sections/BenefitsStrip';
 import Catalog from '../components/sections/Catalog';
+import ClientsCarousel from '../components/sections/ClientsCarousel';
 import Footer from '../components/layout/Footer';
 import FloatingWhatsApp from '../components/layout/FloatingWhatsApp';
 
@@ -23,6 +24,7 @@ const Home = ({ products, categories, loading }) => {
       <Hero />
       <BenefitsStrip />
       <Catalog products={products} categories={categories} loading={loading} />
+      <ClientsCarousel />
       <Footer />
       <FloatingWhatsApp />
     </div>

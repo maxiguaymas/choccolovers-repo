@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Trash2, Plus, Save, LogOut, LayoutDashboard, Package, Edit, Upload, AlertTriangle, Database, X, Star, PackageX } from 'lucide-react';
+import { Trash2, Plus, Save, LogOut, LayoutDashboard, Package, Edit, Upload, AlertTriangle, Database, X, Star, PackageX, Users, Heart } from 'lucide-react';
 import { db, auth } from '../config/firebaseConfig';
 import { cloudinaryConfig } from '../config/cloudinaryConfig';
-import { collection, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from 'firebase/firestore';
 import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from 'firebase/auth';
 
 // --- CATEGORÍAS Y PRODUCTOS DE EJEMPLO (usados para la importación) ---
@@ -85,6 +85,13 @@ export default function AdminPanel({ products, categories }) {
   const [previewImages, setPreviewImages] = useState([]); // Array de URLs locales
   const [isSaving, setIsSaving] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
+  const [inventoryFilter, setInventoryFilter] = useState('Todos');
+
+  // Client Moments States
+  const [clientMoments, setClientMoments] = useState([]);
+  const [clientImageFile, setClientImageFile] = useState(null);
+  const [clientPreview, setClientPreview] = useState('');
+  const [isSavingClient, setIsSavingClient] = useState(false);
 
   // Modal State
   const [modalConfig, setModalConfig] = useState({ isOpen: false, title: '', message: '', type: 'info', onConfirm: () => {} });
@@ -92,6 +99,14 @@ export default function AdminPanel({ products, categories }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setIsAuthenticated(!!user);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const q = query(collection(db, "client_moments"), orderBy("createdAt", "desc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setClientMoments(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     });
     return () => unsubscribe();
   }, []);
@@ -171,8 +186,49 @@ export default function AdminPanel({ products, categories }) {
     }
   };
 
+  const handleClientSave = async (e) => {
+    e.preventDefault();
+    if (!clientImageFile) return;
+
+    setIsSavingClient(true);
+    try {
+      const url = await uploadImageToCloudinary(clientImageFile);
+      if (url) {
+        await addDoc(collection(db, "client_moments"), {
+          url,
+          createdAt: serverTimestamp()
+        });
+        setClientImageFile(null);
+        setClientPreview('');
+        invalidateCache();
+      }
+    } catch (error) {
+      console.error("Error saving client moment:", error);
+    } finally {
+      setIsSavingClient(false);
+    }
+  };
+
+  const initiateClientDelete = (id) => {
+    setModalConfig({
+      isOpen: true,
+      title: '¿Eliminar Foto?',
+      message: 'Se eliminará esta imagen de la sección de clientes permanentemente.',
+      type: 'delete',
+      onConfirm: async () => {
+        try {
+          await deleteDoc(doc(db, "client_moments", id));
+          invalidateCache();
+        } catch (error) {
+          console.error("Error deleting client moment:", error);
+        }
+      }
+    });
+  };
+
   const invalidateCache = () => {
     localStorage.removeItem('chocco_data');
+    localStorage.removeItem('chocco_clients_cache');
   };
 
   const initiateSave = (e) => {
@@ -284,6 +340,10 @@ export default function AdminPanel({ products, categories }) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const filteredInventory = inventoryFilter === 'Todos' 
+    ? products 
+    : products.filter(p => p.category === inventoryFilter);
+
   const handleAddCategory = async (e) => {
     e.preventDefault();
     const catName = newCategory.trim();
@@ -345,6 +405,14 @@ export default function AdminPanel({ products, categories }) {
         // Eliminamos el ID numérico para que Firebase genere uno nuevo
         const { id, ...data } = prod;
         await addDoc(collection(db, "products"), { ...data, inStock: true });
+      }
+      // Importar Momentos de Clientes iniciales
+      const exampleMoments = [
+        { url: 'https://images.unsplash.com/photo-1511381939415-e44015466834?auto=format&fit=crop&q=80&w=400' },
+        { url: 'https://images.unsplash.com/photo-1481391319762-47dff72954d9?auto=format&fit=crop&q=80&w=400' }
+      ];
+      for (const m of exampleMoments) {
+        await addDoc(collection(db, "client_moments"), { ...m, createdAt: serverTimestamp() });
       }
       invalidateCache();
       alert("¡Importación completada! Recarga la página para ver los cambios.");
@@ -484,6 +552,31 @@ export default function AdminPanel({ products, categories }) {
                 </form>
               </div>
 
+              {/* Add Client Moment Form */}
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h3 className="font-bold text-[#3E2723] mb-6 flex items-center gap-2"><Heart size={20} /> Nueva Foto Cliente</h3>
+                <form onSubmit={handleClientSave} className="space-y-4">
+                  <div className="relative">
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if(file) { setClientImageFile(file); setClientPreview(URL.createObjectURL(file)); }
+                      }} 
+                      className="hidden" 
+                      id="client-image-upload" 
+                    />
+                    <label htmlFor="client-image-upload" className="w-full p-3 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 hover:border-[#D4AF37] cursor-pointer flex flex-col items-center justify-center transition-colors">
+                      {clientPreview ? <img src={clientPreview} alt="Preview" className="h-32 w-full object-cover rounded-md" /> : <div className="py-4 flex flex-col items-center text-gray-400"><Upload size={24} className="mb-2" /><span className="text-xs uppercase font-bold">Subir Foto Cliente</span></div>}
+                    </label>
+                  </div>
+                  <button type="submit" disabled={isSavingClient || !clientImageFile} className="w-full bg-[#3E2723] text-white font-bold py-3 rounded-lg hover:bg-black transition-colors flex justify-center items-center gap-2 disabled:opacity-50">
+                    <Save size={18} /> {isSavingClient ? 'Subiendo...' : 'Guardar Foto'}
+                  </button>
+                </form>
+              </div>
+
               {/* Add Category Form */}
               <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                 <h3 className="font-bold text-[#3E2723] mb-6 flex items-center gap-2"><Package size={20} /> {editingCategory ? 'Editar Categoría' : 'Nueva Categoría'}</h3>
@@ -514,16 +607,28 @@ export default function AdminPanel({ products, categories }) {
             <div className="lg:col-span-2">
               <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                 <div className="flex justify-between items-center mb-6">
-                  <h3 className="font-bold text-[#3E2723]">Inventario ({products.length})</h3>
-                  {products.length === 0 && (
-                    <button onClick={handleImportData} disabled={isSaving} className="text-xs bg-blue-50 text-blue-600 px-3 py-1 rounded-full hover:bg-blue-100 flex items-center gap-1">
-                      <Database size={12} /> Importar Datos de Ejemplo
-                    </button>
-                  )}
+                  <h3 className="font-bold text-[#3E2723]">Inventario ({filteredInventory.length})</h3>
+                  <div className="flex items-center gap-4">
+                    <select 
+                      value={inventoryFilter} 
+                      onChange={(e) => setInventoryFilter(e.target.value)}
+                      className="text-xs p-2 border border-gray-200 rounded-lg focus:outline-none focus:border-[#D4AF37] bg-gray-50 font-bold text-[#3E2723]"
+                    >
+                      {!categories.find(c => c.name === 'Todos') && <option value="Todos">Todas las categorías</option>}
+                      {categories.map(cat => (
+                        <option key={cat.id} value={cat.name}>{cat.name === 'Todos' ? 'Todas las categorías' : cat.name}</option>
+                      ))}
+                    </select>
+                    {products.length === 0 && (
+                      <button onClick={handleImportData} disabled={isSaving} className="text-xs bg-blue-50 text-blue-600 px-3 py-1 rounded-full hover:bg-blue-100 flex items-center gap-1">
+                        <Database size={12} /> Importar Datos de Ejemplo
+                      </button>
+                    )}
+                  </div>
                 </div>
                 
                 <div className="space-y-4">
-                  {products.map(product => (
+                  {filteredInventory.map(product => (
                     <div key={product.id} className={`flex items-center gap-4 p-4 border rounded-lg hover:shadow-md transition-all bg-white ${isEditing && productForm.id === product.id ? 'border-[#D4AF37] ring-1 ring-[#D4AF37]' : 'border-gray-100'} ${product.inStock === false ? 'opacity-75' : ''}`}>
                       <img src={product.image} alt={product.name} className={`w-16 h-16 object-cover rounded-md bg-gray-100 ${product.inStock === false ? 'grayscale' : ''}`} />
                       <div className="flex-1">
@@ -541,6 +646,23 @@ export default function AdminPanel({ products, categories }) {
                       <button onClick={() => initiateDelete(product.id, product.name)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-all" title="Eliminar">
                         <Trash2 size={20} />
                       </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Client Moments List */}
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mt-8">
+                <h3 className="font-bold text-[#3E2723] mb-6 flex items-center gap-2"><Users size={20} /> Fotos de Clientes ({clientMoments.length})</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  {clientMoments.map(moment => (
+                    <div key={moment.id} className="relative group aspect-[3/4] rounded-lg overflow-hidden border border-gray-100 bg-gray-50">
+                      <img src={moment.url} alt="Cliente" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <button onClick={() => initiateClientDelete(moment.id)} className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors shadow-lg">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>

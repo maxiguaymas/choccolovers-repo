@@ -5,6 +5,7 @@ import ImageModal from './ImageModal';
 
 const Catalog = ({ products, categories, loading }) => {
   const [activeCategory, setActiveCategory] = useState("Todos");
+  const [isExpanded, setIsExpanded] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
 
   const filteredProducts = activeCategory === "Todos" 
@@ -17,6 +18,10 @@ const Catalog = ({ products, categories, loading }) => {
     if (!a.isFeatured && b.isFeatured) return 1;
     return 0;
   });
+
+  // Limitamos a 6 productos inicialmente si no está expandido
+  const INITIAL_LIMIT = 6;
+  const visibleProducts = isExpanded ? sortedProducts : sortedProducts.slice(0, INITIAL_LIMIT);
 
   return (
     <section id="catalogo" className="py-28 bg-[#FFFAF0] relative overflow-hidden">
@@ -64,11 +69,25 @@ const Catalog = ({ products, categories, loading }) => {
             <p className="text-[#3E2723] font-serif text-lg animate-pulse">Preparando la chocolatería...</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
-            {sortedProducts.map(product => (
-              <ProductCard key={product.id} product={product} onExpand={() => setSelectedImage(product)} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
+              {visibleProducts.map(product => (
+                <ProductCard key={product.id} product={product} onExpand={() => setSelectedImage(product)} />
+              ))}
+            </div>
+
+            {/* Botón Ver Más - Solo aparece si hay más productos que el límite inicial */}
+            {!isExpanded && sortedProducts.length > INITIAL_LIMIT && (
+              <div className="mt-20 text-center">
+                <button 
+                  onClick={() => setIsExpanded(true)}
+                  className="px-12 py-4 border-2 border-[#3E2723] text-[#3E2723] font-black uppercase tracking-[0.2em] text-xs hover:bg-[#3E2723] hover:text-white transition-all duration-500"
+                >
+                  Ver Colección Completa
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </section>

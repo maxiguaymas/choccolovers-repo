@@ -28,7 +28,8 @@ export default {
         shine: {
           '100%': { transform: 'translateX(200%)' },
         }
-      }
+      },
+      
     },
   },
   plugins: [],

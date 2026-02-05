@@ -22,7 +22,7 @@ const Navbar = ({ isScrolled }) => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex space-x-10 items-center">
-            {['Inicio', 'Catálogo', 'Contacto'].map((item) => (
+            {['Inicio', 'Catálogo', 'Clientes', 'Contacto'].map((item) => (
               <a 
                 key={item} 
                 href={`#${item.toLowerCase().replace(' ', '-').replace('á', 'a')}`} 
@@ -60,7 +60,7 @@ const Navbar = ({ isScrolled }) => {
       {isMobileMenuOpen && (
         <div className="md:hidden absolute w-full top-full left-0 glass-panel border-t border-gray-100 shadow-2xl animate-fade-in">
           <div className="px-6 pt-4 pb-8 space-y-2">
-             {['Inicio', 'Catálogo', 'Contacto'].map((item) => (
+             {['Inicio', 'Catálogo', 'Clientes', 'Contacto'].map((item) => (
               <a 
                 key={item} 
                 href={`#${item.toLowerCase().replace(' ', '-').replace('á', 'a')}`}
