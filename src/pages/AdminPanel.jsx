@@ -371,6 +371,30 @@ export default function AdminPanel({ products, categories }) {
     }
   };
 
+  const toggleFeaturedCategory = async (category) => {
+    const featuredCount = categories.filter(c => c.isFeatured).length;
+    
+    if (!category.isFeatured && featuredCount >= 2) {
+      setModalConfig({
+        isOpen: true,
+        title: 'Límite de Categorías',
+        message: 'Solo puedes destacar hasta 2 categorías para mantener el enfoque visual.',
+        type: 'error',
+        confirmText: 'Entendido'
+      });
+      return;
+    }
+
+    try {
+      await updateDoc(doc(db, "categories", category.id), {
+        isFeatured: !category.isFeatured
+      });
+      invalidateCache();
+    } catch (error) {
+      console.error("Error al destacar categoría:", error);
+    }
+  };
+
   const handleEditCategory = (cat) => {
       setNewCategory(cat.name);
       setEditingCategory(cat);
@@ -595,6 +619,13 @@ export default function AdminPanel({ products, categories }) {
                   {categories.filter(c => c.name !== 'Todos').map(c => (
                     <div key={c.id} className="flex items-center gap-1 bg-gray-100 pl-3 pr-1 py-1 rounded-full text-gray-600 text-xs">
                         <span>{c.name}</span>
+                        <button 
+                          onClick={() => toggleFeaturedCategory(c)} 
+                          className={`p-1 transition-colors ${c.isFeatured ? 'text-[#D4AF37]' : 'text-gray-300 hover:text-[#D4AF37]'}`}
+                          title={c.isFeatured ? "Quitar destacado" : "Destacar categoría"}
+                        >
+                          <Star size={12} fill={c.isFeatured ? "currentColor" : "none"} />
+                        </button>
                         <button onClick={() => handleEditCategory(c)} className="p-1 hover:text-[#D4AF37]"><Edit size={12} /></button>
                         <button onClick={() => handleDeleteCategory(c.id)} className="p-1 hover:text-red-500"><X size={12} /></button>
                     </div>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Loader } from 'lucide-react';
+import { Loader, Star } from 'lucide-react';
 import ProductCard from './ProductCard';
 import ImageModal from './ImageModal';
 
@@ -8,12 +8,29 @@ const Catalog = ({ products, categories, loading }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
 
+  // Senior Logic: Sort categories (Featured first, after "Todos")
+  const sortedCategories = [...categories].sort((a, b) => {
+    if (a.name === "Todos") return -1;
+    if (b.name === "Todos") return 1;
+    if (a.isFeatured && !b.isFeatured) return -1;
+    if (!a.isFeatured && b.isFeatured) return 1;
+    return 0;
+  });
+
   const filteredProducts = activeCategory === "Todos" 
     ? products 
     : products.filter(p => p.category === activeCategory);
 
-  // Senior Logic: Sort featured products to the top
+  // Senior Logic: Sort products (In Stock first, then Featured)
   const sortedProducts = [...filteredProducts].sort((a, b) => {
+    const aInStock = a.inStock !== false;
+    const bInStock = b.inStock !== false;
+
+    // 1. Prioridad de Stock (Sin stock al final)
+    if (aInStock && !bInStock) return -1;
+    if (!aInStock && bInStock) return 1;
+
+    // 2. Prioridad de Destacados (dentro del mismo estado de stock)
     if (a.isFeatured && !b.isFeatured) return -1;
     if (!a.isFeatured && b.isFeatured) return 1;
     return 0;
@@ -47,15 +64,18 @@ const Catalog = ({ products, categories, loading }) => {
 
         {/* Filters - Modern Minimalist */}
         <div className="flex flex-wrap justify-center gap-6 mb-16">
-          {categories.map(category => (
+          {sortedCategories.map(category => (
             <button
               key={category.id}
               onClick={() => setActiveCategory(category.name)}
-              className={`pb-2 text-sm font-bold uppercase tracking-widest transition-all duration-300 relative group
+              className={`pb-2 text-sm font-bold uppercase tracking-widest transition-all duration-300 relative group flex items-center gap-2
                 ${activeCategory === category.name 
                   ? 'text-[#3E2723]' 
                   : 'text-gray-400 hover:text-[#D4AF37]'}`}
             >
+              {category.isFeatured && (
+                <Star size={12} className="fill-[#D4AF37] text-[#D4AF37]" />
+              )}
               {category.name}
               <span className={`absolute bottom-0 left-0 h-0.5 bg-[#3E2723] transition-all duration-300 ${activeCategory === category.name ? 'w-full' : 'w-0 group-hover:w-full'}`}></span>
             </button>
