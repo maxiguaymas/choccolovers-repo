@@ -21,16 +21,25 @@ const Catalog = ({ products, categories, loading }) => {
     ? products 
     : products.filter(p => p.category === activeCategory);
 
-  // Senior Logic: Sort products (In Stock first, then Featured)
+  // Senior Logic: Sort products (Featured Categories first when "Todos", then In Stock, then Featured products)
   const sortedProducts = [...filteredProducts].sort((a, b) => {
+    // Si estamos en "Todos", priorizar productos de categorías destacadas
+    if (activeCategory === "Todos") {
+      const aCat = categories.find(c => c.name === a.category);
+      const bCat = categories.find(c => c.name === b.category);
+      const aCatFeatured = aCat?.isFeatured || false;
+      const bCatFeatured = bCat?.isFeatured || false;
+
+      if (aCatFeatured && !bCatFeatured) return -1;
+      if (!aCatFeatured && bCatFeatured) return 1;
+    }
+
     const aInStock = a.inStock !== false;
     const bInStock = b.inStock !== false;
 
-    // 1. Prioridad de Stock (Sin stock al final)
     if (aInStock && !bInStock) return -1;
     if (!aInStock && bInStock) return 1;
 
-    // 2. Prioridad de Destacados (dentro del mismo estado de stock)
     if (a.isFeatured && !b.isFeatured) return -1;
     if (!a.isFeatured && b.isFeatured) return 1;
     return 0;
