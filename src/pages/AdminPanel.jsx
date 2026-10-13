@@ -3,6 +3,7 @@ import { Trash2, Plus, Save, LogOut, LayoutDashboard, Package, Edit, Upload, Ale
 import { db, auth } from '../config/firebaseConfig';
 import { cloudinaryConfig } from '../config/cloudinaryConfig';
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import logoCirculo from '../assets/images/logo-choccolovers-circulo.png';
 
 // --- VALIDATION ERROR MODAL ---
 const ValidationErrorModal = ({ isOpen, errors, onClose }) => {
@@ -53,11 +54,13 @@ const Toast = ({ message, type, onClose }) => {
   const colors = { success: 'bg-green-500', error: 'bg-red-500', info: 'bg-[#D4AF37]' };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 animate-slide-up">
-      <div className={`${colors[type]} text-white px-5 py-3 rounded-lg shadow-xl flex items-center gap-3`}>
-        {icons[type]}
-        <span className="font-medium text-sm">{message}</span>
-        <button onClick={onClose} className="ml-2 hover:opacity-80"><X size={16} /></button>
+    <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 z-50 animate-slide-up max-w-sm sm:max-w-md">
+      <div className={`${colors[type]} text-white px-4 sm:px-5 py-3 rounded-xl shadow-2xl flex items-center justify-between gap-3`}>
+        <div className="flex items-center gap-2.5 min-w-0">
+          <span className="flex-shrink-0">{icons[type]}</span>
+          <span className="font-medium text-xs sm:text-sm truncate">{message}</span>
+        </div>
+        <button onClick={onClose} className="p-1 hover:opacity-80 flex-shrink-0"><X size={16} /></button>
       </div>
     </div>
   );
@@ -637,11 +640,16 @@ export default function AdminPanel({ products, categories, loading }) {
       ))}
 
       {!isAuthenticated ? (
-        <div className="min-h-screen flex items-center justify-center bg-[#FFFAF0]">
-          <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-[#D4AF37]/20">
+        <div className="min-h-screen flex items-center justify-center bg-[#FAF7F2] p-4">
+          <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-xl w-full max-w-md border border-[#D4AF37]/30">
             <div className="text-center mb-8">
-              <h2 className="text-3xl font-serif font-bold text-[#3E2723]">Admin Panel</h2>
-              <p className="text-gray-500 text-sm mt-2">Acceso exclusivo para Chocco Lovers</p>
+              <div className="w-20 h-20 mx-auto mb-4 rounded-full p-1 bg-gradient-to-tr from-[#D4AF37] via-[#F8E8B4] to-[#B38728] shadow-md">
+                <div className="w-full h-full rounded-full overflow-hidden bg-white p-0.5 flex items-center justify-center">
+                  <img src={logoCirculo} alt="ChoccoLovers" className="w-full h-full object-contain" />
+                </div>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-serif font-black text-[#1A0F0B]">Panel de Control</h2>
+              <p className="text-[#8B5A2B] text-xs uppercase tracking-widest font-bold mt-1">ChoccoLovers</p>
             </div>
             <form onSubmit={handleLogin} className="space-y-6">
               <div>
@@ -652,21 +660,30 @@ export default function AdminPanel({ products, categories, loading }) {
                 <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Contraseña</label>
                 <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:border-[#D4AF37]" />
               </div>
-              <button type="submit" className="w-full bg-[#3E2723] text-white font-bold py-4 rounded-lg hover:bg-[#D4AF37] transition-colors">INGRESAR</button>
+              <button type="submit" className="w-full bg-[#1A0F0B] text-white font-bold py-4 rounded-lg hover:bg-[#3E2723] hover:text-[#D4AF37] transition-all shadow-md">INGRESAR</button>
             </form>
           </div>
         </div>
       ) : (
         <div className="min-h-screen bg-gray-50 overflow-x-hidden">
           {/* Admin Header */}
-          <header className="bg-[#3E2723] text-white px-4 sm:px-8 py-4 flex justify-between items-center shadow-lg">
-            <div className="flex items-center gap-3 sm:gap-4">
-              <LayoutDashboard className="text-[#D4AF37] w-5 h-5" />
-              <span className="font-serif font-bold text-lg sm:text-xl">Panel de Control</span>
+          <header className="bg-[#1A0F0B] text-white px-4 sm:px-8 py-3.5 flex justify-between items-center shadow-lg border-b border-[#D4AF37]/30">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full p-0.5 bg-gradient-to-tr from-[#D4AF37] to-[#F8E8B4] shadow-sm flex-shrink-0">
+                <div className="w-full h-full rounded-full overflow-hidden bg-white p-0.5 flex items-center justify-center">
+                  <img src={logoCirculo} alt="ChoccoLovers" className="w-full h-full object-contain" />
+                </div>
+              </div>
+              <div>
+                <span className="font-serif font-bold text-base sm:text-lg block leading-none text-[#FAF7F2]">ChoccoLovers</span>
+                <span className="text-[9px] uppercase tracking-widest text-[#D4AF37] font-bold">Panel de Control</span>
+              </div>
             </div>
-            <div className="flex items-center gap-3 sm:gap-6">
-              <a href="/" className="text-xs sm:text-sm hover:text-[#D4AF37] transition-colors hidden sm:block">Ver Sitio Web</a>
-              <button onClick={() => signOut(auth)} className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm bg-white/10 px-2 sm:px-4 py-2 rounded-full hover:bg-red-500/80 transition-colors">
+            <div className="flex items-center gap-2 sm:gap-4">
+              <a href="/" className="text-xs sm:text-sm text-[#D4AF37] hover:text-[#F8E8B4] border border-[#D4AF37]/40 px-2.5 sm:px-3 py-1.5 rounded-full transition-colors font-medium">
+                <span className="hidden sm:inline">Ver </span>Web
+              </a>
+              <button onClick={() => signOut(auth)} className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm bg-white/10 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full hover:bg-red-500/80 transition-colors">
                 <LogOut size={14} /> <span className="hidden sm:inline">Salir</span>
               </button>
             </div>
@@ -850,8 +867,8 @@ export default function AdminPanel({ products, categories, loading }) {
                         {clientMoments.map(moment => (
                           <div key={moment.id} className="relative group aspect-square rounded-lg overflow-hidden border border-gray-100 bg-gray-50">
                             <img src={moment.url} alt="Cliente" className="w-full h-full object-cover" />
-                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                              <button onClick={() => initiateClientDelete(moment.id)} className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600">
+                            <div className="absolute inset-0 bg-black/40 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <button onClick={() => initiateClientDelete(moment.id)} className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 shadow-md">
                                 <Trash2 size={14} />
                               </button>
                             </div>
@@ -946,7 +963,7 @@ export default function AdminPanel({ products, categories, loading }) {
                         {productForm.images?.map((img, idx) => (
                           <div key={`existing-${idx}`} className="relative group aspect-square">
                             <img src={img} alt="Product" className="w-full h-full object-cover rounded-lg border border-gray-200" />
-                            <button type="button" onClick={() => removeImage(idx, true)} className="absolute -top-1 -right-1 bg-red-500 text-white p-1 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button type="button" onClick={() => removeImage(idx, true)} className="absolute -top-1 -right-1 bg-red-500 text-white p-1 rounded-full shadow-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                               <X size={12} />
                             </button>
                           </div>
@@ -954,7 +971,7 @@ export default function AdminPanel({ products, categories, loading }) {
                         {previewImages.map((url, idx) => (
                           <div key={`new-${idx}`} className="relative group aspect-square">
                             <img src={url} alt="Preview" className="w-full h-full object-cover rounded-lg border-2 border-[#D4AF37]/30" />
-                            <button type="button" onClick={() => removeImage(idx, false)} className="absolute -top-1 -right-1 bg-red-500 text-white p-1 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button type="button" onClick={() => removeImage(idx, false)} className="absolute -top-1 -right-1 bg-red-500 text-white p-1 rounded-full shadow-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                               <X size={12} />
                             </button>
                           </div>

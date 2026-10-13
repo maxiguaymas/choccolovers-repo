@@ -1,93 +1,154 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Great+Vibes&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-body { font-family: 'Montserrat', sans-serif; overflow-x: hidden; }
-h1, h2, h3, h4 { font-family: 'Playfair Display', serif; }
-.font-script { font-family: 'Great Vibes', cursive; }
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    color-scheme: light;
+  }
+  
+  body {
+    font-family: 'Montserrat', sans-serif;
+    background-color: #FAF7F2;
+    color: #2A1610;
+    overflow-x: hidden;
+  }
 
-/* Dorado Luminoso (Para fondo oscuro) */
-.text-gold-gradient {
-  /* Gradiente diagonal estático para un brillo natural y elegante */
-  background: linear-gradient(135deg, #bf953f 0%, #fcf6ba 45%, #b38728 55%, #fbf5b7 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  background-size: 100% auto;
-  /* Animación de resplandor (Pulse) en lugar de desplazamiento */
-  animation: gold-pulse 3s ease-in-out infinite;
+  h1, h2, h3, h4, .font-serif {
+    font-family: 'Playfair Display', Georgia, serif;
+    letter-spacing: -0.01em;
+  }
+
+  .font-editorial {
+    font-family: 'Cormorant Garamond', Georgia, serif;
+  }
+
+  .font-script {
+    font-family: 'Great Vibes', cursive;
+  }
 }
 
-/* Dorado Intenso (Para fondo blanco - Scroll) */
-.text-gold-gradient-scrolled {
-  background: linear-gradient(135deg, #8B4513 0%, #D2691E 45%, #B8860B 55%, #D2691E 100%);
+/* Custom Luxury Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #1A0F0B;
+}
+::-webkit-scrollbar-thumb {
+  background: #5D4037;
+  border-radius: 4px;
+  border: 2px solid #1A0F0B;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #D4AF37;
+}
+
+/* Dorado Luminoso (Para fondo oscuro / Hero) */
+.text-gold-gradient {
+  background: linear-gradient(135deg, #BF953F 0%, #FCF6BA 35%, #B38728 65%, #FBF5B7 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  background-size: 100% auto;
-  animation: gold-pulse-scrolled 3s ease-in-out infinite;
+  background-size: 200% auto;
+  animation: gold-pulse 4s ease-in-out infinite;
+}
+
+/* Dorado Intenso (Para fondo claro / Scrolled) */
+.text-gold-gradient-scrolled {
+  background: linear-gradient(135deg, #8B4513 0%, #D4AF37 40%, #A07818 70%, #D4AF37 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  background-size: 200% auto;
+  animation: gold-pulse-scrolled 4s ease-in-out infinite;
 }
 
 @keyframes gold-pulse {
   0%, 100% {
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)) brightness(100%);
+    filter: drop-shadow(0 2px 10px rgba(212, 175, 55, 0.4)) brightness(105%);
   }
   50% {
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)) brightness(125%) saturate(110%);
+    filter: drop-shadow(0 3px 18px rgba(252, 246, 186, 0.7)) brightness(130%) saturate(115%);
   }
 }
 
 @keyframes gold-pulse-scrolled {
   0%, 100% {
-    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1)) brightness(100%);
+    filter: drop-shadow(0 1px 3px rgba(139, 69, 19, 0.2)) brightness(100%);
   }
   50% {
-    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1)) brightness(120%) saturate(110%);
+    filter: drop-shadow(0 2px 6px rgba(212, 175, 55, 0.35)) brightness(115%) saturate(110%);
   }
 }
 
-/* Animación suave para el hero */
+/* Glassmorphism Classes */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.glass-panel-dark {
+  background: rgba(26, 15, 11, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.gold-border-gradient {
+  border-image: linear-gradient(135deg, #BF953F, #FCF6BA, #B38728) 1;
+}
+
+/* Micro-shine button animation */
+.btn-shine-gold {
+  position: relative;
+  overflow: hidden;
+}
+.btn-shine-gold::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -60%;
+  width: 40%;
+  height: 200%;
+  background: linear-gradient(
+    60deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.35) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: rotate(25deg);
+  transition: all 0.7s cubic-bezier(0.19, 1, 0.22, 1);
+}
+.btn-shine-gold:hover::after {
+  left: 140%;
+}
+
+/* Animations */
 .animate-float {
   animation: float 6s ease-in-out infinite;
 }
 @keyframes float {
-  0% { transform: translateY(0px); }
+  0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
 }
 
-/* Animación rápida para el menú móvil */
 .animate-fade-in {
-  animation: fadeIn 0.2s ease-out forwards;
+  animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
+  from { opacity: 0; transform: translateY(-8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-.glass-panel {
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-/* Toast Animation */
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
 .animate-slide-up {
-  animation: slideUp 0.3s ease-out forwards;
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-/* Skeleton pulse */
-@keyframes skeleton-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-.animate-pulse {
-  animation: skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;

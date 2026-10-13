@@ -12,19 +12,21 @@ const Home = ({ products, categories, loading }) => {
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
+      setIsScrolled(window.scrollY > 40);
     };
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   return (
-    <div className="font-sans text-gray-800 bg-white selection:bg-[#3E2723] selection:text-[#D4AF37]">
+    <div className="font-sans text-[#2A1610] bg-[#FAF7F2] min-h-screen selection:bg-[#3E2723] selection:text-[#D4AF37]">
       <Navbar isScrolled={isScrolled} />
-      <Hero />
-      <BenefitsStrip />
-      <Catalog products={products} categories={categories} loading={loading} />
-      <ClientsCarousel />
+      <main>
+        <Hero />
+        <BenefitsStrip />
+        <Catalog products={products} categories={categories} loading={loading} />
+        <ClientsCarousel />
+      </main>
       <Footer />
       <FloatingWhatsApp />
     </div>
